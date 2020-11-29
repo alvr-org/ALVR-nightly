@@ -17,11 +17,11 @@ jobs:
       
       - uses: actions/cache@v2
         with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         
       - name: Generate tag, set release ref
         id: gen_tag
@@ -48,6 +48,8 @@ jobs:
           # If both client and server were bumped, format is v12.0.0, otherwise v12.0.0-server or v12.0.0-client
           tag_name: ${{ needs.gen_tag.outputs.version_tag }}
           release_name: ALVR ${{ needs.gen_tag.outputs.version_tag }}
+          # TODO: gather commit messages to post here in the body
+          body: "Nightly release of ALVR: ${{ needs.gen_tag.outputs.version_tag }}"
           draft: true
           prerelease: false
 
