@@ -1,0 +1,111 @@
+name: Release nightly
+
+on:
+  workflow_dispatch:
+
+jobs:
+  gen_tag:
+    runs-on: windows-latest
+    outputs:
+      version_tag: ${{ steps.gen_tag.outputs.version_tag }}
+      release_ref: ${{ steps.gen_tag.outputs.release_ref }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: 'JackD83/ALVR'
+        
+      - name: Generate tag, set release ref
+        id: gen_tag
+        run: |
+          $out = cargo xtask bump-versions --nightly
+          echo $out
+          echo "::set-output name=version_tag::$(echo $out | sls -CaseSensitive -Pattern '^v.*$')"
+          echo "::set-output name=release_ref::$(git rev-parse HEAD)"
+          
+  prepare_release:
+    runs-on: windows-latest
+    needs: [gen_tag]
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Release tag is taken from the gen_tag job.
+          # If both client and server were bumped, format is v12.0.0, otherwise v12.0.0-server or v12.0.0-client
+          tag_name: ${{ needs.gen_tag.outputs.version_tag }}
+          release_name: ALVR ${{ needs.gen_tag.outputs.version_tag }}
+          draft: true
+          prerelease: false
+
+  build_windows:
+    # Windows latest has Rust, Android NDK and LLVM already installed.
+    # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
+    runs-on: windows-latest
+    needs: [gen_tag, prepare_release]
+    env:
+      # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
+      # This is specific to the GitHub windows-latest runner.
+      LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: 'JackD83/ALVR'
+          ref: ${{ needs.gen_tag.outputs.release_ref }}
+
+      - name: Set better Android SDK path (workaround for rust-android-gradle)
+        shell: cmd
+        run: |
+          mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
+      - name: Build and package ALVR (.zip, .pdb, .apk)
+        env:
+          ANDROID_HOME: '${{ github.workspace }}\android-sdk'
+          ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
+        run: |
+          cargo xtask install-deps
+          cargo xtask bump-versions --nightly
+          cargo xtask publish
+      # Three release asset upload actions for three assets - .zip, .pdb and .apk
+      - name: Upload ALVR Windows Server .zip
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alvr_server_windows.zip
+          asset_name: alvr_server_windows.zip
+          asset_content_type: application/zip
+      - name: Upload ALVR Windows Server .pdb
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alvr_server.pdb
+          asset_name: alvr_server.pdb
+          asset_content_type: application/octet-stream
+      - name: Upload ALVR Client .apk
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alvr_client.apk
+          asset_name: alvr_client.apk
+          asset_content_type: application/vnd.android.package-archive
+          
+  publish_release:
+    runs-on: ubuntu-latest
+    needs: [prepare_release, build_windows]
+    steps:
+      - uses: eregon/publish-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ needs.prepare_release.outputs.release_id }}
