@@ -2,6 +2,8 @@ name: Release nightly
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron:  '0 22 * * *'
 
 jobs:
   gen_tag:
@@ -49,7 +51,7 @@ jobs:
           tag_name: ${{ needs.gen_tag.outputs.version_tag }}
           release_name: ALVR ${{ needs.gen_tag.outputs.version_tag }}
           # TODO: gather commit messages to post here in the body
-          body: "Nightly release of ALVR: ${{ needs.gen_tag.outputs.version_tag }}"
+          body: 'Nightly release of ALVR: ${{ needs.gen_tag.outputs.version_tag }}'
           draft: true
           prerelease: false
 
