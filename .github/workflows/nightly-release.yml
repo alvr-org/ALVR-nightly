@@ -28,7 +28,8 @@ jobs:
       - name: Generate tag, set release ref
         id: gen_tag
         run: |
-          $out = RUST_BACKTRACE=1 cargo xtask bump-versions --nightly
+          $env:RUST_BACKTRACE = 1
+          $out = cargo xtask bump-versions --nightly
           echo $out
           echo "::set-output name=version_tag::$(echo $out | sls -CaseSensitive -Pattern '^v.*$')"
           echo "::set-output name=release_ref::$(git rev-parse HEAD)"
@@ -90,9 +91,10 @@ jobs:
           ANDROID_HOME: '${{ github.workspace }}\android-sdk'
           ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
         run: |
-          RUST_BACKTRACE=1 cargo xtask install-deps
-          RUST_BACKTRACE=1 cargo xtask bump-versions --nightly
-          RUST_BACKTRACE=1 cargo xtask publish --nightly
+          $env:RUST_BACKTRACE = 1
+          cargo xtask install-deps
+          cargo xtask bump-versions --nightly
+          cargo xtask publish --nightly
       # Three release asset upload actions for three assets - .zip, .pdb and .apk
       - name: Upload ALVR Windows Server .zip
         uses: actions/upload-release-asset@v1
