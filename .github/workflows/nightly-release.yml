@@ -92,7 +92,7 @@ jobs:
         run: |
           cargo xtask install-deps
           cargo xtask bump-versions --nightly
-          cargo xtask publish
+          cargo xtask publish --nightly
       # Three release asset upload actions for three assets - .zip, .pdb and .apk
       - name: Upload ALVR Windows Server .zip
         uses: actions/upload-release-asset@v1
