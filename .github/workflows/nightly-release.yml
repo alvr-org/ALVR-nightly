@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          repository: 'JackD83/ALVR'
+          repository: 'alvr-org/ALVR'
       
       - uses: actions/cache@v2
         with:
@@ -53,7 +53,7 @@ jobs:
           # TODO: gather commit messages to post here in the body
           body: |
             Nightly release of ALVR: ${{ needs.gen_tag.outputs.version_tag }}
-            Generated from commit: JackD83/ALVR@${{ needs.gen_tag.outputs.release_ref }}
+            Generated from commit: alvr-org/ALVR@${{ needs.gen_tag.outputs.release_ref }}
           draft: true
           prerelease: false
 
@@ -70,7 +70,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          repository: 'JackD83/ALVR'
+          repository: 'alvr-org/ALVR'
           ref: ${{ needs.gen_tag.outputs.release_ref }}
 
       - uses: actions/cache@v2
