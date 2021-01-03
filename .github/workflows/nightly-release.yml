@@ -114,35 +114,8 @@ jobs:
           cargo xtask publish --nightly
           $file = Get-ChildItem -Name .\build\*.exe | Select-Object -f 1
           echo "::set-output name=exe_filename::$file"
-      # Three release asset upload actions for three assets - .zip, .pdb and .apk
-      - name: Upload ALVR Windows Server .zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_server_windows.zip
-          asset_name: alvr_server_windows.zip
-          asset_content_type: application/zip
-      - name: Upload ALVR Windows Server .pdb
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_server.pdb
-          asset_name: alvr_server.pdb
-          asset_content_type: application/octet-stream
-      - name: Upload ALVR Client .apk
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_client.apk
-          asset_name: alvr_client.apk
-          asset_content_type: application/vnd.android.package-archive
-      - name: Upload Windows Installer
+      # Upload artifacts
+      - name: Upload Windows installer
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -151,6 +124,42 @@ jobs:
           asset_path: ./build/${{ steps.build.outputs.exe_filename }}
           asset_name: ${{ steps.build.outputs.exe_filename }}
           asset_content_type: application/octet-stream
+      - name: Upload portable server for Windows
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alvr_server_windows.zip
+          asset_name: alvr_server_windows.zip
+          asset_content_type: application/zip
+      - name: Upload Windows server .pdb
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alvr_server.pdb
+          asset_name: alvr_server.pdb
+          asset_content_type: application/octet-stream
+      - name: Upload client for Oculus Quest
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alvr_client_oculus_quest.apk
+          asset_name: alvr_client_oculus_quest.apk
+          asset_content_type: application/vnd.android.package-archive
+      - name: Upload client for Oculus Go
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alvr_client_oculus_go.apk
+          asset_name: alvr_client_oculus_go.apk
+          asset_content_type: application/vnd.android.package-archive
           
   publish_release:
     runs-on: ubuntu-latest
