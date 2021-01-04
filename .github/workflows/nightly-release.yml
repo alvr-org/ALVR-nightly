@@ -19,7 +19,7 @@ jobs:
       
       - uses: actions-rs/toolchain@v1
         with:
-          target: x86_64-pc-windows-msvc
+          toolcahin: stable
       - uses: Swatinem/rust-cache@v1
       
       - name: Generate tag, set release ref
@@ -73,7 +73,7 @@ jobs:
       
       - uses: actions-rs/toolchain@v1
         with:
-          target: x86_64-pc-windows-msvc
+          toolcahin: stable
       - uses: Swatinem/rust-cache@v1
       
       - uses: maxim-lobanov/setup-android-tools@v1
