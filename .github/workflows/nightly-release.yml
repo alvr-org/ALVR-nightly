@@ -17,13 +17,8 @@ jobs:
         with:
           repository: 'alvr-org/ALVR'
       
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rs/toolchain@v1
+      - uses: Swatinem/rust-cache@v1
         
       - name: Generate tag, set release ref
         id: gen_tag
@@ -73,15 +68,16 @@ jobs:
         with:
           repository: 'alvr-org/ALVR'
           ref: ${{ needs.gen_tag.outputs.release_ref }}
-
-      - uses: actions/cache@v2
-        name: Cache Cargo files
+      
+      - uses: actions-rs/toolchain@v1
+      - uses: Swatinem/rust-cache@v1
+      
+      - uses: maxim-lobanov/setup-android-tools@v1
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          packages: |
+            platforms;android-30
+            ndk;21.1.6352462
+          cache: true
         
       - uses: actions/cache@v2
         name: Cache Wix 3.14
