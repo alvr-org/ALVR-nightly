@@ -18,8 +18,10 @@ jobs:
           repository: 'alvr-org/ALVR'
       
       - uses: actions-rs/toolchain@v1
+        with:
+          target: x86_64-pc-windows-msvc
       - uses: Swatinem/rust-cache@v1
-        
+      
       - name: Generate tag, set release ref
         id: gen_tag
         run: |
@@ -70,6 +72,8 @@ jobs:
           ref: ${{ needs.gen_tag.outputs.release_ref }}
       
       - uses: actions-rs/toolchain@v1
+        with:
+          target: x86_64-pc-windows-msvc
       - uses: Swatinem/rust-cache@v1
       
       - uses: maxim-lobanov/setup-android-tools@v1
