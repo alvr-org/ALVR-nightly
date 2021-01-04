@@ -80,7 +80,7 @@ jobs:
         with:
           packages: |
             platforms;android-30
-            ndk;21.1.6352462
+            ndk;22.0.7026061
           cache: true
         
       - uses: actions/cache@v2
