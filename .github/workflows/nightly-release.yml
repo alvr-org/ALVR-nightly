@@ -45,7 +45,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # Release tag is taken from the gen_tag job.
-          # If both client and server were bumped, format is v12.0.0, otherwise v12.0.0-server or v12.0.0-client
           tag_name: ${{ needs.gen_tag.outputs.version_tag }}
           release_name: ALVR ${{ needs.gen_tag.outputs.version_tag }}
           # TODO: gather commit messages to post here in the body
@@ -55,7 +54,7 @@ jobs:
           draft: true
           prerelease: false
 
-  build_windows:
+  build_windows_server:
     # Windows latest has Rust, Android NDK and LLVM already installed.
     # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
     runs-on: windows-latest
@@ -74,14 +73,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          override: true
       - uses: Swatinem/rust-cache@v1
-      
-      - uses: maxim-lobanov/setup-android-tools@v1
-        with:
-          packages: |
-            platforms;android-30
-            ndk;22.0.7026061
-          cache: true
         
       - uses: actions/cache@v2
         name: Cache Wix 3.14
@@ -97,23 +90,17 @@ jobs:
           Invoke-WebRequest http://static.wixtoolset.org/releases/v3.14.0.4118/wix314-binaries.zip -OutFile wix314-binaries.zip
           Expand-Archive -Path wix314-binaries.zip -DestinationPath wix314-binaries/bin
 
-      - name: Set better Android SDK path (workaround for rust-android-gradle)
-        shell: cmd
-        run: |
-          mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
-      - name: Build and package ALVR (.zip, .pdb, .apk, .exe)
+      - name: Build and package ALVR (.zip, .pdb, .exe)
         id: build
         env:
-          ANDROID_HOME: '${{ github.workspace }}\android-sdk'
-          ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
           WIX: 'wix314-binaries'
         run: |
           $env:RUST_BACKTRACE = 1
-          cargo xtask install-deps
           cargo xtask bump-versions --nightly
-          cargo xtask publish --nightly
+          cargo xtask publish-server --nightly
           $file = Get-ChildItem -Name .\build\*.exe | Select-Object -f 1
           echo "::set-output name=exe_filename::$file"
+
       # Upload artifacts
       - name: Upload Windows installer
         uses: actions/upload-release-asset@v1
@@ -142,6 +129,54 @@ jobs:
           asset_path: ./build/alvr_server.pdb
           asset_name: alvr_server.pdb
           asset_content_type: application/octet-stream
+
+  build_android_client:
+    # Windows latest has Rust, Android NDK and LLVM already installed.
+    # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
+    runs-on: windows-latest
+    needs: [gen_tag, prepare_release]
+    env:
+      # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
+      # This is specific to the GitHub windows-latest runner.
+      LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: 'alvr-org/ALVR'
+          ref: ${{ needs.gen_tag.outputs.release_ref }}
+      
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-linux-android
+          override: true
+      - uses: Swatinem/rust-cache@v1
+      
+      - uses: maxim-lobanov/setup-android-tools@v1
+        with:
+          packages: |
+            platforms;android-30
+            ndk;22.0.7026061
+          cache: true
+
+      - name: Set better Android SDK path (workaround for rust-android-gradle)
+        shell: cmd
+        run: |
+          mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
+
+      - name: Build and package ALVR (.apk)
+        id: build
+        env:
+          ANDROID_HOME: '${{ github.workspace }}\android-sdk'
+          ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
+        run: |
+          $env:RUST_BACKTRACE = 1
+          cargo xtask install-deps
+          cargo xtask bump-versions --nightly
+          cargo xtask publish-client --nightly
+
+      # Upload artifacts
       - name: Upload client for Oculus Quest
         uses: actions/upload-release-asset@v1
         env:
@@ -160,10 +195,10 @@ jobs:
           asset_path: ./build/alvr_client_oculus_go.apk
           asset_name: alvr_client_oculus_go.apk
           asset_content_type: application/vnd.android.package-archive
-          
+
   publish_release:
     runs-on: ubuntu-latest
-    needs: [prepare_release, build_windows]
+    needs: [prepare_release, build_windows_server, build_android_client]
     steps:
       - uses: eregon/publish-release@v1
         env:
