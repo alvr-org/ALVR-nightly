@@ -1,5 +1,8 @@
 name: Release nightly
 
+env:
+  CARGO_TERM_COLOR: always
+
 on:
   workflow_dispatch:
   schedule:
