@@ -175,7 +175,6 @@ jobs:
           ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
         run: |
           $env:RUST_BACKTRACE = 1
-          cargo xtask install-deps
           cargo xtask bump-versions --nightly
           cargo xtask publish-client --nightly
 
