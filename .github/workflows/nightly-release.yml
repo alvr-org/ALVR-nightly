@@ -177,6 +177,25 @@ jobs:
           $env:RUST_BACKTRACE = 1
           cargo xtask bump-versions --nightly
           cargo xtask publish-client --nightly
+            
+      - name: Sign Oculus Quest APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_quest
+        with:
+          releaseDirectory: build/alvr_client_oculus_quest
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+      - name: Sign Oculus Go APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_go
+        with:
+          releaseDirectory: build/alvr_client_oculus_go
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
 
       # Upload artifacts
       - name: Upload client for Oculus Quest
@@ -185,7 +204,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_client_oculus_quest.apk
+          asset_path: ${{steps.sign_quest.outputs.signedReleaseFile}}
           asset_name: alvr_client_oculus_quest.apk
           asset_content_type: application/vnd.android.package-archive
       - name: Upload client for Oculus Go
@@ -194,7 +213,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_client_oculus_go.apk
+          asset_path:  ${{steps.sign_go.outputs.signedReleaseFile}}
           asset_name: alvr_client_oculus_go.apk
           asset_content_type: application/vnd.android.package-archive
 
