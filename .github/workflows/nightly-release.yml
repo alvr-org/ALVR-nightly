@@ -70,7 +70,7 @@ jobs:
         id: windows_deps_cache
         with:
           path: deps
-          key: ${{ runner.os }}-windows-deps
+          key: windows-deps
       - name: Build Windows dependencies
         if: steps.windows_deps_cache.outputs.cache-hit != 'true'
         env:
@@ -78,27 +78,12 @@ jobs:
         run: |
           sudo apt update && sudo apt install -y build-essential mingw-w64 mingw-w64-tools nasm
           cargo xtask install-server-deps --cross
-          
-  download_wix:
-    runs-on: windows-latest
-    steps:
-      - name: Cache Wix 3.14
-        uses: actions/cache@v2
-        id: wix_cache
-        with:
-          path: wix314-binaries
-          key: ${{ runner.os }}-wix314-4118
-      - name: Download WiX 3.14 binaries
-        if: steps.wix_cache.outputs.cache-hit != 'true'
-        run: |
-          Invoke-WebRequest http://static.wixtoolset.org/releases/v3.14.0.4118/wix314-binaries.zip -OutFile wix314-binaries.zip
-          Expand-Archive -Path wix314-binaries.zip -DestinationPath wix314-binaries/bin
 
   build_windows_server:
     # Windows latest has Rust, Android NDK and LLVM already installed.
     # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
     runs-on: windows-latest
-    needs: [prepare_release, cross_build_windows_deps, download_wix]
+    needs: [prepare_release, cross_build_windows_deps]
     env:
       # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
       # This is specific to the GitHub windows-latest runner.
@@ -120,13 +105,12 @@ jobs:
         uses: actions/cache@v2
         with:
           path: deps
-          key: ${{ runner.os }}-windows-deps
+          key: windows-deps
         
-      - name: Get Wix 3.14
-        uses: actions/cache@v2
-        with:
-          path: wix314-binaries
-          key: ${{ runner.os }}-wix314-4118
+      - name: Download WiX 3.14 binaries
+        run: |
+          Invoke-WebRequest http://static.wixtoolset.org/releases/v3.14.0.4118/wix314-binaries.zip -OutFile wix314-binaries.zip
+          Expand-Archive -Path wix314-binaries.zip -DestinationPath wix314-binaries/bin
 
       - name: Build and package ALVR (.zip, .pdb, .exe)
         id: build
@@ -192,7 +176,7 @@ jobs:
         id: android_deps_cache
         with:
           path: deps
-          key: ${{ runner.os }}-android-deps
+          key: android-deps
       - name: Build Android dependencies
         if: steps.android_deps_cache.outputs.cache-hit != 'true'
         run: |
@@ -231,7 +215,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: deps
-          key: ${{ runner.os }}-android-deps
+          key: android-deps
 
       - name: Build and package ALVR (.apk)
         id: build
