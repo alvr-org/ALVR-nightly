@@ -9,11 +9,12 @@ on:
     - cron:  '0 22 * * *'
 
 jobs:
-  gen_tag:
+  prepare_release:
     runs-on: windows-latest
     outputs:
-      version_tag: ${{ steps.gen_tag.outputs.version_tag }}
       release_ref: ${{ steps.gen_tag.outputs.release_ref }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -33,14 +34,7 @@ jobs:
           echo $out
           echo "::set-output name=version_tag::$(echo $out | sls -CaseSensitive -Pattern '^v.*$')"
           echo "::set-output name=release_ref::$(git rev-parse HEAD)"
-          
-  prepare_release:
-    runs-on: windows-latest
-    needs: [gen_tag]
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      release_id: ${{ steps.create_release.outputs.id }}
-    steps:
+      
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -48,20 +42,65 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # Release tag is taken from the gen_tag job.
-          tag_name: ${{ needs.gen_tag.outputs.version_tag }}
-          release_name: ALVR ${{ needs.gen_tag.outputs.version_tag }}
+          tag_name: ${{ steps.gen_tag.outputs.version_tag }}
+          release_name: ALVR ${{ steps.gen_tag.outputs.version_tag }}
           # TODO: gather commit messages to post here in the body
           body: |
-            Nightly release of ALVR: ${{ needs.gen_tag.outputs.version_tag }}
-            Generated from commit: alvr-org/ALVR@${{ needs.gen_tag.outputs.release_ref }}
+            Nightly release of ALVR: ${{ steps.gen_tag.outputs.version_tag }}
+            Generated from commit: alvr-org/ALVR@${{ steps.gen_tag.outputs.release_ref }}
           draft: true
           prerelease: false
+          
+  cross_build_windows_deps:
+    runs-on: ubuntu-latest
+    outputs:
+      cache_hit: ${{ steps.windows_deps_cache.outputs.cache-hit }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: 'alvr-org/ALVR'
+          ref: ${{ needs.gen_tag.outputs.release_ref }}
+      
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      
+      - name: Cache Windows dependencies
+        uses: actions/cache@v2
+        id: windows_deps_cache
+        with:
+          path: deps
+          key: windows-deps
+      - name: Build Windows dependencies
+        if: steps.windows_deps_cache.outputs.cache-hit != 'true'
+        run: |
+          $env:RUST_BACKTRACE = 1
+          cargo xtask install-server-deps --cross
+          
+  download_wix:
+    runs-on: windows-latest
+    outputs:
+      cache_hit: ${{ steps.wix_cache.outputs.cache-hit }}
+    steps:
+      - name: Cache Wix 3.14
+        uses: actions/cache@v2
+        id: wix_cache
+        with:
+          path: wix314-binaries
+          key: ${{ runner.os }}-wix314-4118
+      - name: Download WiX 3.14 binaries
+        if: steps.wix_cache.outputs.cache-hit != 'true'
+        run: |
+          Invoke-WebRequest http://static.wixtoolset.org/releases/v3.14.0.4118/wix314-binaries.zip -OutFile wix314-binaries.zip
+          Expand-Archive -Path wix314-binaries.zip -DestinationPath wix314-binaries/bin
 
   build_windows_server:
     # Windows latest has Rust, Android NDK and LLVM already installed.
     # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
     runs-on: windows-latest
-    needs: [gen_tag, prepare_release]
+    needs: [prepare_release, cross_build_windows_deps, download_wix]
     env:
       # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
       # This is specific to the GitHub windows-latest runner.
@@ -78,17 +117,15 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v1
+
+      - name: Get Windows dependencies
+        if: ${{ needs.cross_build_windows_deps.outputs.cache_hit }} != 'true'
+        run: |
+          $env:RUST_BACKTRACE = 1
+          cargo xtask install-server-deps
         
-      - uses: actions/cache@v2
-        name: Cache Wix 3.14
-        id: cache_wix
-        with:
-          path: |
-            wix314-binaries
-          key: ${{ runner.os }}-wix314-4118
-      
-      - name: Download WiX 3.14 binaries
-        if: steps.cache_wix.outputs.cache-hit != 'true'
+      - name: Get WiX binaries
+        if: ${{ needs.download_wix.outputs.cache_hit }} != 'true'
         run: |
           Invoke-WebRequest http://static.wixtoolset.org/releases/v3.14.0.4118/wix314-binaries.zip -OutFile wix314-binaries.zip
           Expand-Archive -Path wix314-binaries.zip -DestinationPath wix314-binaries/bin
@@ -99,7 +136,6 @@ jobs:
           WIX: 'wix314-binaries'
         run: |
           $env:RUST_BACKTRACE = 1
-          cargo xtask install-server-deps
           cargo xtask bump-versions --nightly
           cargo xtask publish-server --nightly
           $file = Get-ChildItem -Name .\build\*.exe | Select-Object -f 1
@@ -133,12 +169,45 @@ jobs:
           asset_path: ./build/alvr_server.pdb
           asset_name: alvr_server.pdb
           asset_content_type: application/octet-stream
+          
+  build_android_deps:
+    runs-on: windows-latest
+    outputs:
+      cache_hit: ${{ steps.android_deps_cache.outputs.cache-hit }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: 'alvr-org/ALVR'
+          ref: ${{ needs.gen_tag.outputs.release_ref }}
+      
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Set better Android SDK path (workaround for rust-android-gradle)
+        shell: cmd
+        run: |
+          mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
+      
+      - name: Cache Android dependencies
+        uses: actions/cache@v2
+        id: android_deps_cache
+        with:
+          path: deps
+          key: android-deps
+      - name: Build Android dependencies
+        if: steps.android_deps_cache.outputs.cache-hit != 'true'
+        run: |
+          $env:RUST_BACKTRACE = 1
+          cargo xtask install-client-deps
 
   build_android_client:
     # Windows latest has Rust, Android NDK and LLVM already installed.
     # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
     runs-on: windows-latest
-    needs: [gen_tag, prepare_release]
+    needs: [prepare_release, build_android_deps]
     env:
       # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
       # This is specific to the GitHub windows-latest runner.
@@ -156,18 +225,17 @@ jobs:
           target: aarch64-linux-android
           override: true
       - uses: Swatinem/rust-cache@v1
-      
-      - uses: maxim-lobanov/setup-android-tools@v1
-        with:
-          packages: |
-            platforms;android-30
-            ndk;22.0.7026061
-          cache: true
 
       - name: Set better Android SDK path (workaround for rust-android-gradle)
         shell: cmd
         run: |
           mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
+          
+      - name: Get Android dependencies
+        if: ${{ steps.android_deps_cache.outputs.cache_hit }} != 'true'
+        run: |
+          $env:RUST_BACKTRACE = 1
+          cargo xtask install-client-deps
 
       - name: Build and package ALVR (.apk)
         id: build
@@ -176,7 +244,6 @@ jobs:
           ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
         run: |
           $env:RUST_BACKTRACE = 1
-          cargo xtask install-client-deps
           cargo xtask bump-versions --nightly
           cargo xtask publish-client --nightly
             
