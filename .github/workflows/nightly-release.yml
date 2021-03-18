@@ -99,6 +99,7 @@ jobs:
           WIX: 'wix314-binaries'
         run: |
           $env:RUST_BACKTRACE = 1
+          cargo xtask install-client-deps
           cargo xtask bump-versions --nightly
           cargo xtask publish-server --nightly
           $file = Get-ChildItem -Name .\build\*.exe | Select-Object -f 1
@@ -175,6 +176,7 @@ jobs:
           ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
         run: |
           $env:RUST_BACKTRACE = 1
+          cargo xtask install-client-deps
           cargo xtask bump-versions --nightly
           cargo xtask publish-client --nightly
             
