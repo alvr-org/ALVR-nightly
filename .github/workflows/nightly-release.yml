@@ -53,8 +53,6 @@ jobs:
           
   cross_build_windows_deps:
     runs-on: ubuntu-latest
-    outputs:
-      cache_hit: ${{ steps.windows_deps_cache.outputs.cache-hit }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -72,7 +70,7 @@ jobs:
         id: windows_deps_cache
         with:
           path: deps
-          key: windows-deps
+          key: ${{ runner.os }}-windows-deps
       - name: Build Windows dependencies
         if: steps.windows_deps_cache.outputs.cache-hit != 'true'
         env:
@@ -83,8 +81,6 @@ jobs:
           
   download_wix:
     runs-on: windows-latest
-    outputs:
-      cache_hit: ${{ steps.wix_cache.outputs.cache-hit }}
     steps:
       - name: Cache Wix 3.14
         uses: actions/cache@v2
@@ -121,16 +117,16 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Get Windows dependencies
-        if: ${{ needs.cross_build_windows_deps.outputs.cache_hit }} != 'true'
-        run: |
-          $env:RUST_BACKTRACE = 1
-          cargo xtask install-server-deps
+        uses: actions/cache@v2
+        with:
+          path: deps
+          key: ${{ runner.os }}-windows-deps
         
-      - name: Get WiX binaries
-        if: ${{ needs.download_wix.outputs.cache_hit }} != 'true'
-        run: |
-          Invoke-WebRequest http://static.wixtoolset.org/releases/v3.14.0.4118/wix314-binaries.zip -OutFile wix314-binaries.zip
-          Expand-Archive -Path wix314-binaries.zip -DestinationPath wix314-binaries/bin
+      - name: Get Wix 3.14
+        uses: actions/cache@v2
+        with:
+          path: wix314-binaries
+          key: ${{ runner.os }}-wix314-4118
 
       - name: Build and package ALVR (.zip, .pdb, .exe)
         id: build
@@ -174,8 +170,6 @@ jobs:
           
   build_android_deps:
     runs-on: windows-latest
-    outputs:
-      cache_hit: ${{ steps.android_deps_cache.outputs.cache-hit }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -198,7 +192,7 @@ jobs:
         id: android_deps_cache
         with:
           path: deps
-          key: android-deps
+          key: ${{ runner.os }}-android-deps
       - name: Build Android dependencies
         if: steps.android_deps_cache.outputs.cache-hit != 'true'
         run: |
@@ -234,10 +228,10 @@ jobs:
           mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
           
       - name: Get Android dependencies
-        if: ${{ steps.android_deps_cache.outputs.cache_hit }} != 'true'
-        run: |
-          $env:RUST_BACKTRACE = 1
-          cargo xtask install-client-deps
+        uses: actions/cache@v2
+        with:
+          path: deps
+          key: ${{ runner.os }}-android-deps
 
       - name: Build and package ALVR (.apk)
         id: build
