@@ -75,8 +75,9 @@ jobs:
           key: windows-deps
       - name: Build Windows dependencies
         if: steps.windows_deps_cache.outputs.cache-hit != 'true'
+        env:
+          RUST_BACKTRACE: 1
         run: |
-          $env:RUST_BACKTRACE = 1
           cargo xtask install-server-deps --cross
           
   download_wix:
