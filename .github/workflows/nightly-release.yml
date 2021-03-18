@@ -78,6 +78,7 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: |
+          sudo apt update && sudo apt install -y build-essential mingw-w64 mingw-w64-tools nasm
           cargo xtask install-server-deps --cross
           
   download_wix:
