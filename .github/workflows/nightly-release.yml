@@ -58,12 +58,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: 'alvr-org/ALVR'
-          ref: ${{ needs.gen_tag.outputs.release_ref }}
-      
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
       
       - name: Cache Windows dependencies
         uses: actions/cache@v2
@@ -71,13 +65,15 @@ jobs:
         with:
           path: deps
           key: windows-deps
-      - name: Build Windows dependencies
+      - uses: actions-rs/toolchain@v1
+        if: steps.windows_deps_cache.outputs.cache-hit != 'true'
+        with:
+          toolchain: stable
+      - name: Build dependencies
         if: steps.windows_deps_cache.outputs.cache-hit != 'true'
         env:
           RUST_BACKTRACE: 1
-        run: |
-          sudo apt update && sudo apt install -y build-essential mingw-w64 mingw-w64-tools nasm
-          cargo xtask install-server-deps --cross
+        run: cargo xtask install-windows-deps
 
   build_windows_server:
     # Windows latest has Rust, Android NDK and LLVM already installed.
@@ -159,17 +155,10 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: 'alvr-org/ALVR'
-          ref: ${{ needs.gen_tag.outputs.release_ref }}
-      
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
 
       - name: Set better Android SDK path (workaround for rust-android-gradle)
         shell: cmd
-        run: |
-          mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
+        run: mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
       
       - name: Cache Android dependencies
         uses: actions/cache@v2
@@ -177,6 +166,10 @@ jobs:
         with:
           path: deps
           key: android-deps
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
       - name: Build Android dependencies
         if: steps.android_deps_cache.outputs.cache-hit != 'true'
         run: |
@@ -208,8 +201,7 @@ jobs:
 
       - name: Set better Android SDK path (workaround for rust-android-gradle)
         shell: cmd
-        run: |
-          mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
+        run: mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
           
       - name: Get Android dependencies
         uses: actions/cache@v2
