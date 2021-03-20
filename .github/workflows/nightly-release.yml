@@ -16,8 +16,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       release_id: ${{ steps.create_release.outputs.id }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
           repository: 'alvr-org/ALVR'
       
@@ -28,8 +27,9 @@ jobs:
       
       - name: Generate tag, set release ref
         id: gen_tag
+        env:
+          RUST_BACKTRACE: 1
         run: |
-          $env:RUST_BACKTRACE = 1
           $out = cargo xtask bump-versions --nightly
           echo $out
           echo "::set-output name=version_tag::$(echo $out | sls -CaseSensitive -Pattern '^v.*$')"
@@ -73,7 +73,7 @@ jobs:
         if: steps.deps_cache.outputs.cache-hit != 'true'
         env:
           RUST_BACKTRACE: 1
-        run: cargo xtask install-windows-deps
+        run: cargo xtask build-windows-deps
 
   build_windows_server:
     # Windows latest has Rust, Android NDK and LLVM already installed.
@@ -97,7 +97,7 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v1
 
-      - name: Get Windows dependencies
+      - name: Get dependencies
         uses: actions/cache@v2
         with:
           path: deps
@@ -112,8 +112,8 @@ jobs:
         id: build
         env:
           WIX: 'wix314-binaries'
+          RUST_BACKTRACE: 1
         run: |
-          $env:RUST_BACKTRACE = 1
           cargo xtask bump-versions --nightly
           cargo xtask publish-server --nightly
           $file = Get-ChildItem -Name .\build\*.exe | Select-Object -f 1
@@ -151,8 +151,7 @@ jobs:
   build_android_deps:
     runs-on: windows-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
           repository: 'alvr-org/ALVR'
 
@@ -160,7 +159,7 @@ jobs:
         shell: cmd
         run: mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
       
-      - name: Cache Android dependencies
+      - name: Cache dependencies
         uses: actions/cache@v2
         id: deps_cache
         with:
@@ -169,12 +168,11 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          override: true
-      - name: Build Android dependencies
+      - name: Build dependencies
         if: steps.deps_cache.outputs.cache-hit != 'true'
-        run: |
-          $env:RUST_BACKTRACE = 1
-          cargo xtask install-android-deps
+        env:
+          RUST_BACKTRACE: 1
+        run: cargo xtask build-android-deps
 
   build_android_client:
     # Windows latest has Rust, Android NDK and LLVM already installed.
@@ -186,8 +184,7 @@ jobs:
       # This is specific to the GitHub windows-latest runner.
       LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
           repository: 'alvr-org/ALVR'
           ref: ${{ needs.prepare_release.outputs.release_ref }}
@@ -203,7 +200,7 @@ jobs:
         shell: cmd
         run: mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
           
-      - name: Get Android dependencies
+      - name: Get dependencies
         uses: actions/cache@v2
         with:
           path: deps
@@ -214,8 +211,8 @@ jobs:
         env:
           ANDROID_HOME: '${{ github.workspace }}\android-sdk'
           ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
+          RUST_BACKTRACE: 1
         run: |
-          $env:RUST_BACKTRACE = 1
           cargo xtask bump-versions --nightly
           cargo xtask publish-client --nightly
             
