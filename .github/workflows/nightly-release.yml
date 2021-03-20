@@ -74,6 +74,12 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: cargo xtask build-windows-deps
+        
+      - name: Upload dependencies
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-deps
+          path: deps
 
   build_windows_server:
     # Windows latest has Rust, Android NDK and LLVM already installed.
@@ -97,11 +103,11 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v1
 
-      - name: Get dependencies
-        uses: actions/cache@v2
+      - name: Download dependencies
+        uses: actions/download-artifact@v2
         with:
+          name: windows-deps
           path: deps
-          key: windows-deps
         
       - name: Download WiX 3.14 binaries
         run: |
@@ -173,6 +179,12 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: cargo xtask build-android-deps
+        
+      - name: Upload dependencies
+        uses: actions/upload-artifact@v2
+        with:
+          name: android-deps
+          path: deps
 
   build_android_client:
     # Windows latest has Rust, Android NDK and LLVM already installed.
@@ -200,11 +212,11 @@ jobs:
         shell: cmd
         run: mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
           
-      - name: Get dependencies
-        uses: actions/cache@v2
+      - name: Download dependencies
+        uses: actions/download-artifact@v2
         with:
+          name: android-deps
           path: deps
-          key: android-deps
 
       - name: Build and package ALVR (.apk)
         id: build
