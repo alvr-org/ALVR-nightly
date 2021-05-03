@@ -6,7 +6,7 @@ env:
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '0 22 * * *'
+    - cron: "0 22 * * *"
 
 jobs:
   prepare_release:
@@ -18,13 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          repository: 'alvr-org/ALVR'
-      
+          repository: "alvr-org/ALVR"
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
       - uses: Swatinem/rust-cache@v1
-      
+
       - name: Generate tag, set release ref
         id: gen_tag
         env:
@@ -34,7 +34,7 @@ jobs:
           echo $out
           echo "::set-output name=version_tag::$(echo $out | sls -CaseSensitive -Pattern '^v.*$')"
           echo "::set-output name=release_ref::$(git rev-parse HEAD)"
-      
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -50,15 +50,15 @@ jobs:
             Generated from commit: alvr-org/ALVR@${{ steps.gen_tag.outputs.release_ref }}
           draft: true
           prerelease: false
-          
+
   build_windows_deps:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          repository: 'alvr-org/ALVR'
-      
+          repository: "alvr-org/ALVR"
+
       - name: Cache dependencies
         uses: actions/cache@v2
         id: deps_cache
@@ -74,7 +74,7 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: cargo xtask build-windows-deps
-        
+
       - name: Upload dependencies
         uses: actions/upload-artifact@v2
         with:
@@ -94,9 +94,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          repository: 'alvr-org/ALVR'
+          repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
-      
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -108,16 +108,15 @@ jobs:
         with:
           name: windows-deps
           path: deps
-        
+
       - name: Download WiX 3.14 binaries
         run: |
           Invoke-WebRequest http://static.wixtoolset.org/releases/v3.14.0.4118/wix314-binaries.zip -OutFile wix314-binaries.zip
           Expand-Archive -Path wix314-binaries.zip -DestinationPath wix314-binaries/bin
 
-      - name: Build and package ALVR (.zip, .pdb, .exe)
-        id: build
+      - name: Build and package ALVR
         env:
-          WIX: 'wix314-binaries'
+          WIX: "wix314-binaries"
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump-versions --nightly
@@ -126,7 +125,7 @@ jobs:
           echo "::set-output name=exe_filename::$file"
 
       # Upload artifacts
-      - name: Upload Windows installer
+      - name: Upload installer
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -135,7 +134,7 @@ jobs:
           asset_path: ./build/${{ steps.build.outputs.exe_filename }}
           asset_name: ${{ steps.build.outputs.exe_filename }}
           asset_content_type: application/octet-stream
-      - name: Upload portable server for Windows
+      - name: Upload portable server
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -144,7 +143,7 @@ jobs:
           asset_path: ./build/alvr_server_windows.zip
           asset_name: alvr_server_windows.zip
           asset_content_type: application/zip
-      - name: Upload Windows server .pdb
+      - name: Upload server .pdb
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -153,18 +152,90 @@ jobs:
           asset_path: ./build/alvr_server.pdb
           asset_name: alvr_server.pdb
           asset_content_type: application/octet-stream
-          
+
+  build_linux_deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: "alvr-org/ALVR"
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        id: deps_cache
+        with:
+          path: deps
+          key: ubuntu-deps
+      - uses: actions-rs/toolchain@v1
+        if: steps.deps_cache.outputs.cache-hit != 'true'
+        with:
+          toolchain: stable
+      - name: Build dependencies
+        if: steps.deps_cache.outputs.cache-hit != 'true'
+        env:
+          RUST_BACKTRACE: 1
+        run: |
+          sudo apt install build-essential pkg-config nasm libva-dev libvulkan-dev libx264-dev libx265-dev
+          cargo xtask build-ffmpeg-ubuntu
+
+      - name: Upload dependencies
+        uses: actions/upload-artifact@v2
+        with:
+          name: ubuntu-deps
+          path: deps
+
+  build_linux_server:
+    runs-on: ubuntu-latest
+    needs: [prepare_release, build_linux_deps]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          repository: "alvr-org/ALVR"
+          ref: ${{ needs.prepare_release.outputs.release_ref }}
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v1
+
+      - name: Download dependencies
+        uses: actions/download-artifact@v2
+        with:
+          name: ubuntu-deps
+          path: deps
+
+      - name: Build and package ALVR
+        env:
+          RUST_BACKTRACE: 1
+        run: |
+          sudo apt install libasound2-dev libgtk-3-dev libvulkan-dev libunwind-dev
+          cargo xtask bump-versions --nightly
+          cargo xtask publish-server --nightly
+
+      - name: Upload portable server
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/alvr_server_linux.zip
+          asset_name: alvr_server_linux.zip
+          asset_content_type: application/zip
+
   build_android_deps:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
         with:
-          repository: 'alvr-org/ALVR'
+          repository: "alvr-org/ALVR"
 
       - name: Set better Android SDK path (workaround for rust-android-gradle)
         shell: cmd
         run: mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
-      
+
       - name: Cache dependencies
         uses: actions/cache@v2
         id: deps_cache
@@ -179,7 +250,7 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: cargo xtask build-android-deps
-        
+
       - name: Upload dependencies
         uses: actions/upload-artifact@v2
         with:
@@ -198,9 +269,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          repository: 'alvr-org/ALVR'
+          repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
-      
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -211,7 +282,7 @@ jobs:
       - name: Set better Android SDK path (workaround for rust-android-gradle)
         shell: cmd
         run: mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
-          
+
       - name: Download dependencies
         uses: actions/download-artifact@v2
         with:
@@ -227,7 +298,7 @@ jobs:
         run: |
           cargo xtask bump-versions --nightly
           cargo xtask publish-client --nightly
-            
+
       - name: Sign Oculus Quest APK
         uses: r0adkll/sign-android-release@v1
         id: sign_quest
@@ -263,7 +334,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path:  ${{steps.sign_go.outputs.signedReleaseFile}}
+          asset_path: ${{steps.sign_go.outputs.signedReleaseFile}}
           asset_name: alvr_client_oculus_go.apk
           asset_content_type: application/vnd.android.package-archive
 
