@@ -168,11 +168,11 @@ jobs:
           path: deps
           key: ubuntu-deps
       - uses: actions-rs/toolchain@v1
-        if: steps.deps_cache.outputs.cache-hit != 'true'
+        # if: steps.deps_cache.outputs.cache-hit != 'true'
         with:
           toolchain: stable
       - name: Build dependencies
-        if: steps.deps_cache.outputs.cache-hit != 'true'
+        # if: steps.deps_cache.outputs.cache-hit != 'true'
         env:
           RUST_BACKTRACE: 1
         run: |
