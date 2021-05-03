@@ -102,6 +102,7 @@ jobs:
           Expand-Archive -Path wix314-binaries.zip -DestinationPath wix314-binaries/bin
 
       - name: Build and package ALVR
+        id: build
         env:
           WIX: "wix314-binaries"
           RUST_BACKTRACE: 1
