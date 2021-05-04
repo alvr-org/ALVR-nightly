@@ -207,15 +207,6 @@ jobs:
           asset_path: ./build/alvr_server_linux.zip
           asset_name: alvr_server_linux.zip
           asset_content_type: application/zip
-      - name: Upload vulkan layer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/vulkan-layer.zip
-          asset_name: vulkan-layer.zip
-          asset_content_type: application/zip
 
   build_android_deps:
     runs-on: windows-latest
