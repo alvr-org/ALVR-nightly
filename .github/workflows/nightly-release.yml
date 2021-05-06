@@ -155,7 +155,7 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: |
-          sudo apt install build-essential pkg-config nasm libva-dev libvulkan-dev libx264-dev libx265-dev
+          sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev
           cargo xtask build-ffmpeg-linux
           cd deps/ubuntu/FFmpeg-n4.4 && sudo make install && cd ../../..
 
@@ -283,7 +283,13 @@ jobs:
 
   publish_release:
     runs-on: ubuntu-latest
-    needs: [prepare_release, build_windows_server, build_linux_server, build_android_client]
+    needs:
+      [
+        prepare_release,
+        build_windows_server,
+        build_linux_server,
+        build_android_client,
+      ]
     steps:
       - uses: eregon/publish-release@v1
         env:
