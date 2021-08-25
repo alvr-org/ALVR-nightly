@@ -157,7 +157,7 @@ jobs:
           sudo apt update
           sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev
           cargo xtask build-ffmpeg-linux
-          cd deps/ubuntu/FFmpeg-n4.4 && sudo make install && cd ../../..
+          cd deps/linux/FFmpeg-n4.4 && sudo make install && cd ../../..
 
       - name: Build and package ALVR
         env:
