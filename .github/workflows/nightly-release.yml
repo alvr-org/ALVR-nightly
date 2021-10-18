@@ -19,7 +19,6 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: "alvr-org/ALVR"
-          ref: "v16"
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
