@@ -80,7 +80,7 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump-versions --nightly
-          cargo xtask publish-server --nightly
+          cargo xtask publish-server --nightly --gpl
           $file = Get-ChildItem -Name .\build\*.exe | Select-Object -f 1
           echo "::set-output name=exe_filename::$file"
 
