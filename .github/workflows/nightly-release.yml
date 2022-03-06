@@ -189,7 +189,7 @@ jobs:
           ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
           RUST_BACKTRACE: 1
         run: |
-          cargo xtask prepare-deps --platform android
+          cargo xtask prepare-deps --platform android --ci
           cargo xtask bump --nightly
           cargo xtask package-client
 
