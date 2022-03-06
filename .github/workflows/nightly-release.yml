@@ -191,7 +191,7 @@ jobs:
         run: |
           cargo xtask prepare-deps --platform android
           cargo xtask bump --nightly
-          cargo xtask publish-client
+          cargo xtask package-client
 
       - name: Sign Oculus Quest APK
         uses: r0adkll/sign-android-release@v1
