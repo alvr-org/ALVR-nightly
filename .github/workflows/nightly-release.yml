@@ -118,7 +118,7 @@ jobs:
           asset_name: alvr_server.pdb
           asset_content_type: application/octet-stream
 
-  build_ubuntu_server:
+  build_linux_server:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
@@ -131,18 +131,22 @@ jobs:
           toolchain: stable
           override: true
 
+      - name: Build and install dependencies
+        env:
+          RUST_BACKTRACE: 1
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit
+          cp packaging/deb/cuda.pc /usr/share/pkgconfig
+          cargo xtask prepare-deps --platform linux
+          cd deps/linux/ffmpeg && sudo make install && cd ../../..
+
       - name: Build and package ALVR
         env:
           RUST_BACKTRACE: 1
         run: |
-          sudo apt update
-          sudo apt install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libgtk-3-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit libjack-dev libxcb-composite0-dev
-          cp packaging/deb/cuda.pc /usr/share/pkgconfig
-          cargo xtask prepare-deps --platform linux
-          cd deps/linux/ffmpeg && sudo make install && cd ../../..
           cargo xtask bump --nightly
           cargo xtask package-server --gpl
-          mv build/alvr_server_linux.zip build/alvr_server_ubuntu_20_04.zip
 
       - name: Upload portable server
         uses: actions/upload-release-asset@v1
@@ -150,9 +154,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_server_ubuntu_20_04.zip
-          asset_name: alvr_server_ubuntu_20_04.zip
-          asset_content_type: application/zip
+          asset_path: ./build/alvr_server_linux.tar.gz
+          asset_name: alvr_server_linux.tar.gz
+          asset_content_type: application/gzip
 
   build_android_client:
     # Windows latest has Rust, Android NDK and LLVM already installed.
