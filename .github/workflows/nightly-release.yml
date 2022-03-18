@@ -242,7 +242,7 @@ jobs:
       [
         prepare_release,
         build_windows_server,
-        build_ubuntu_server,
+        build_linux_server,
         build_android_client,
       ]
     steps:
