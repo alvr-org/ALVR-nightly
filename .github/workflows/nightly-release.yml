@@ -173,8 +173,6 @@ jobs:
       - name: Build and package ALVR (.apk)
         id: build
         env:
-          ANDROID_HOME: '${{ github.workspace }}\android-sdk'
-          ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
           RUST_BACKTRACE: 1
         run: |
           cargo xtask prepare-deps --platform android
