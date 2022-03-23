@@ -70,13 +70,7 @@ jobs:
 
       - uses: crazy-max/ghaction-chocolatey@v1
         with:
-          args: install vulkan-sdk
-      - uses: crazy-max/ghaction-chocolatey@v1
-        with:
-          args: install pkgconfiglite
-      - uses: crazy-max/ghaction-chocolatey@v1
-        with:
-          args: install wixtoolset
+          args: install zip unzip vulkan-sdk pkgconfiglite wixtoolset
 
       - name: Build and package ALVR
         id: build
@@ -159,14 +153,8 @@ jobs:
           asset_content_type: application/gzip
 
   build_android_client:
-    # Windows latest has Rust, Android NDK and LLVM already installed.
-    # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
-    runs-on: windows-2019
+    runs-on: ubuntu-latest
     needs: [prepare_release]
-    env:
-      # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
-      # This is specific to the GitHub windows-2019 runner.
-      LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
     steps:
       - uses: actions/checkout@v2
         with:
@@ -182,10 +170,6 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Set better Android SDK path (workaround for rust-android-gradle)
-        shell: cmd
-        run: mklink /J "%GITHUB_WORKSPACE%\android-sdk" "%ANDROID_SDK_ROOT%"
-
       - name: Build and package ALVR (.apk)
         id: build
         env:
@@ -193,7 +177,7 @@ jobs:
           ANDROID_SDK_ROOT: '${{ github.workspace }}\android-sdk'
           RUST_BACKTRACE: 1
         run: |
-          cargo xtask prepare-deps --platform android --ci
+          cargo xtask prepare-deps --platform android
           cargo xtask bump --nightly
           cargo xtask package-client
 
