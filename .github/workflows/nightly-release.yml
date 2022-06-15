@@ -168,11 +168,16 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '11'
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r22b
 
       - name: Build and package ALVR (.apk)
         id: build
         env:
           RUST_BACKTRACE: 1
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
           cargo xtask prepare-deps --platform android
           cargo xtask bump --nightly
