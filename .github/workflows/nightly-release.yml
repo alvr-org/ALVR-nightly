@@ -246,7 +246,7 @@ jobs:
           cargo xtask prepare-deps --platform android
           cargo xtask bump --nightly
           popd
-          ./gradlew assembleNightlyDebug
+          bash ./gradlew assembleNightlyDebug
 
       - name: Sign apk
         uses: r0adkll/sign-android-release@v1
