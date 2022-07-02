@@ -151,7 +151,7 @@ jobs:
           asset_name: alvr_server_linux.tar.gz
           asset_content_type: application/gzip
 
-  build_android_client:
+  build_quest_client:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
@@ -173,7 +173,7 @@ jobs:
         with:
           ndk-version: r22b
 
-      - name: Build and package ALVR (.apk)
+      - name: Build and package ALVR
         id: build
         env:
           RUST_BACKTRACE: 1
@@ -184,43 +184,25 @@ jobs:
           cargo xtask package-client
           cargo xtask package-client-lib
 
-      - name: Sign Oculus Quest APK
+      - name: Sign apk
         uses: r0adkll/sign-android-release@v1
-        id: sign_quest
+        id: sign_apk
         with:
           releaseDirectory: build/alvr_client_oculus_quest
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-      - name: Sign Oculus Go APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_go
-        with:
-          releaseDirectory: build/alvr_client_oculus_go
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
 
       # Upload artifacts
-      - name: Upload client for Oculus Quest
+      - name: Upload apk
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ${{steps.sign_quest.outputs.signedReleaseFile}}
+          asset_path: ${{steps.sign_apk.outputs.signedReleaseFile}}
           asset_name: alvr_client_oculus_quest.apk
-          asset_content_type: application/vnd.android.package-archive
-      - name: Upload client for Oculus Go
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ${{steps.sign_go.outputs.signedReleaseFile}}
-          asset_name: alvr_client_oculus_go.apk
           asset_content_type: application/vnd.android.package-archive
       - name: Upload client library
         uses: actions/upload-release-asset@v1
@@ -232,6 +214,60 @@ jobs:
           asset_name: alvr_client_core.zip
           asset_content_type: application/zip
 
+  build_gearvr_go_client:
+    runs-on: ubuntu-latest
+    needs: [prepare_release]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          repository: "alvr-org/alvr-gearvr-go"
+          submodules: true
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: aarch64-linux-android
+          override: true
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r22b
+
+      - name: Build and package ALVR
+        id: build
+        env:
+          RUST_BACKTRACE: 1
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          pushd ./ALVR
+          cargo xtask prepare-deps --platform android
+          cargo xtask bump --nightly
+          popd
+          ./gradlew assembleNightlyDebug
+
+      - name: Sign apk
+        uses: r0adkll/sign-android-release@v1
+        id: sign_apk
+        with:
+          releaseDirectory: app/build/outputs/apk/Nightly/debug
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload apk
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ${{steps.sign_apk.outputs.signedReleaseFile}}
+          asset_name: alvr_client_gearvr_go.apk
+          asset_content_type: application/vnd.android.package-archive
+
   publish_release:
     runs-on: ubuntu-latest
     needs:
@@ -239,7 +275,8 @@ jobs:
         prepare_release,
         build_windows_server,
         build_linux_server,
-        build_android_client,
+        build_quest_client,
+        build_gearvr_go_client,
       ]
     steps:
       - uses: eregon/publish-release@v1
