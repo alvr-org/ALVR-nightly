@@ -163,8 +163,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/ALVR-x86-64.AppImage
-          asset_name: ALVR-x86-64.AppImage
+          asset_path: ./build/ALVR-x86_64.AppImage
+          asset_name: ALVR-x86_64.AppImage
           
           asset_content_type: application/appimage
       - name: Upload linux server (AppImage.zsync)
@@ -173,8 +173,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/ALVR-x86-64.AppImage.zsync
-          asset_name: ALVR-x86-64.AppImage.zsync
+          asset_path: ./build/ALVR-x86_64.AppImage.zsync
+          asset_name: ALVR-x86_64.AppImage.zsync
 
   build_quest_client:
     runs-on: ubuntu-latest
