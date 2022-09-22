@@ -130,7 +130,7 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           sudo apt-get update
-          sudo apt-get install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libgtk-3-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit
+          sudo apt-get install build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libxrandr-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit
           cp packaging/deb/cuda.pc /usr/share/pkgconfig
           cargo xtask prepare-deps --platform linux
 
@@ -139,9 +139,9 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump --nightly
-          cargo xtask package-server --gpl
+          cargo xtask package-server --local-ffmpeg
 
-      - name: Upload portable server
+      - name: Upload linux server
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -150,6 +150,31 @@ jobs:
           asset_path: ./build/alvr_server_linux.tar.gz
           asset_name: alvr_server_linux.tar.gz
           asset_content_type: application/gzip
+          
+      - name: Build and package ALVR (AppImage)
+        env:
+          RUST_BACKTRACE: 1
+        run: |
+          cargo xtask package-server --local-ffmpeg --appimage --zsync
+
+      - name: Upload linux server (AppImage)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/ALVR-x86-64.AppImage
+          asset_name: ALVR-x86-64.AppImage
+          
+          asset_content_type: application/appimage
+      - name: Upload linux server (AppImage.zsync)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+          asset_path: ./build/ALVR-x86-64.AppImage.zsync
+          asset_name: ALVR-x86-64.AppImage.zsync
 
   build_quest_client:
     runs-on: ubuntu-latest
