@@ -102,15 +102,6 @@ jobs:
           asset_path: ./build/alvr_server_windows.zip
           asset_name: alvr_server_windows.zip
           asset_content_type: application/zip
-      - name: Upload server .pdb
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_server.pdb
-          asset_name: alvr_server.pdb
-          asset_content_type: application/octet-stream
 
   build_linux_server:
     runs-on: ubuntu-latest
