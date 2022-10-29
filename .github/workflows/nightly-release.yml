@@ -266,6 +266,7 @@ jobs:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
           bash prepare-deps.sh --platform android --ci
+          pushd ALVR; cargo xtask bump --nightly; popd
           bash ./gradlew assembleNightlyDebug
 
       - name: Sign apk
