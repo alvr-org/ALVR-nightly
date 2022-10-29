@@ -196,7 +196,7 @@ jobs:
           RUST_BACKTRACE: 1
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
-          cargo xtask prepare-deps --platform android
+          cargo xtask prepare-deps --platform android --ci
           cargo xtask bump --nightly
           cargo xtask package-client
           cargo xtask package-client-lib
@@ -265,7 +265,7 @@ jobs:
           RUST_BACKTRACE: 1
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
-          bash prepare-deps.sh
+          bash prepare-deps.sh --platform android --ci
           bash ./gradlew assembleNightlyDebug
 
       - name: Sign apk
