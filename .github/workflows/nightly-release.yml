@@ -140,7 +140,7 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump --nightly
-          cargo xtask package-server --local-ffmpeg
+          cargo xtask package-server
       - name: Upload linux server
         uses: actions/upload-release-asset@v1
         env:
@@ -155,7 +155,7 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: |
-          cargo xtask package-server --gpl --appimage --zsync
+          cargo xtask package-server --appimage --zsync
       - name: Upload linux server (AppImage)
         uses: actions/upload-release-asset@v1
         env:
