@@ -140,7 +140,7 @@ jobs:
           cargo xtask bump --nightly
           cargo xtask build-streamer --gpl
           cd build
-          zip -r9X %cd%/alvr_streamer_windows .
+          zip -r9X alvr_streamer_windows .
 
       - name: Upload portable streamer (zip)
         uses: actions/upload-release-asset@v1
