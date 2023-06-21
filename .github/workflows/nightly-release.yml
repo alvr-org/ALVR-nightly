@@ -113,13 +113,9 @@ jobs:
           asset_content_type: application/zip
 
   build_windows_streamer_debug:
-    # Windows latest has Rust, Android NDK and LLVM already installed.
-    # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
     runs-on: windows-2019
     needs: [prepare_release]
     env:
-      # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
-      # This is specific to the GitHub windows-2019 runner.
       LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
     steps:
       - uses: actions/checkout@v2
@@ -385,7 +381,9 @@ jobs:
       [
         prepare_release,
         build_windows_streamer,
+        build_windows_streamer_debug,
         build_linux_streamer,
+        build_linux_streamer_debug,
         build_android_client,
 #         build_other_client,
       ]
