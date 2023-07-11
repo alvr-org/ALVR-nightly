@@ -70,7 +70,7 @@ jobs:
 
       - uses: crazy-max/ghaction-chocolatey@v1
         with:
-          args: install zip unzip vulkan-sdk pkgconfiglite wixtoolset
+          args: install zip unzip pkgconfiglite wixtoolset
 
       - name: Build and package ALVR
         id: build
@@ -129,7 +129,7 @@ jobs:
 
       - uses: crazy-max/ghaction-chocolatey@v1
         with:
-          args: install zip unzip vulkan-sdk pkgconfiglite
+          args: install zip unzip pkgconfiglite
 
       - name: Build and package ALVR
         env:
