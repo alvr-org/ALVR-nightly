@@ -317,10 +317,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install build-essential libgtk-3-dev
-          git clone https://github.com/FFmpeg/nv-codec-headers.git
-          cd nv-codec-headers/
-          sudo make install
-          cd ..
 
       - name: Build and package ALVR
         env:
@@ -444,6 +440,7 @@ jobs:
         build_linux_streamer,
         build_linux_streamer_debug,
         build_linux_launcher,
+        build_flatpak_bundle,
         build_android_client,
       ]
     steps:
