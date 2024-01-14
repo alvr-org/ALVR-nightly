@@ -403,24 +403,16 @@ jobs:
           cargo xtask package-client
           cargo xtask package-client-lib
 
-      - name: Setup build tool version variable
-        shell: bash
-        run: |
-          BUILD_TOOL_VERSION=$(ls /usr/local/lib/android/sdk/build-tools/ | tail -n 1)
-          echo "BUILD_TOOL_VERSION=$BUILD_TOOL_VERSION" >> $GITHUB_ENV
-          echo Last build tool version is: $BUILD_TOOL_VERSION
-
       - name: Sign apk
-        uses: r0adkll/sign-android-release@v1
+        uses: ilharp/sign-android-release@v1
         id: sign_apk
         with:
-          releaseDirectory: build/alvr_client_android
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.KEY_ALIAS }}
+          releaseDir: build/alvr_client_android
+          signingKey: ${{ secrets.SIGNING_KEY }}
+          keyAlias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
+          buildToolsVersion: 34.0.0
 
       - name: Upload apk
         uses: actions/upload-release-asset@v1
