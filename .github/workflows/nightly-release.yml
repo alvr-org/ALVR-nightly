@@ -70,7 +70,7 @@ jobs:
 
       - uses: crazy-max/ghaction-chocolatey@v1
         with:
-          args: install zip unzip pkgconfiglite wixtoolset
+          args: install zip unzip pkgconfiglite
 
       - name: Build and package ALVR
         id: build
@@ -84,24 +84,24 @@ jobs:
           echo "::set-output name=exe_filename::$file"
 
       # Upload artifacts
-      - name: Upload installer (exe)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/${{ steps.build.outputs.exe_filename }}
-          asset_name: ${{ steps.build.outputs.exe_filename }}
-          asset_content_type: application/octet-stream
-      - name: Upload installer (msi)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_streamer_windows.msi
-          asset_name: alvr_streamer_windows.msi
-          asset_content_type: application/octet-stream
+      # - name: Upload installer (exe)
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+      #     asset_path: ./build/${{ steps.build.outputs.exe_filename }}
+      #     asset_name: ${{ steps.build.outputs.exe_filename }}
+      #     asset_content_type: application/octet-stream
+      # - name: Upload installer (msi)
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ needs.prepare_release.outputs.upload_url }}
+      #     asset_path: ./build/alvr_streamer_windows.msi
+      #     asset_name: alvr_streamer_windows.msi
+      #     asset_content_type: application/octet-stream
       - name: Upload portable streamer (zip)
         uses: actions/upload-release-asset@v1
         env:
@@ -168,7 +168,7 @@ jobs:
 
       - uses: crazy-max/ghaction-chocolatey@v1
         with:
-          args: install zip wixtoolset
+          args: install zip
 
       - name: Build and package ALVR
         env:
