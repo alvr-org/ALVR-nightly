@@ -198,7 +198,7 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Build and install dependencies
+      - name: Build dependencies and package ALVR
         env:
           RUST_BACKTRACE: 1
         run: |
@@ -208,13 +208,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install libfuse2 build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libxrandr-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit libgtk-3-dev libpipewire-0.3-dev libspa-0.2-dev
           cp alvr/xtask/deb/cuda.pc /usr/share/pkgconfig
-
-      - name: Build and package ALVR
-        env:
-          RUST_BACKTRACE: 1
-        run: |
           cargo xtask bump --nightly
           cargo xtask package-streamer --gpl --ci
+
       - name: Upload linux streamer
         uses: actions/upload-release-asset@v1
         env:
@@ -238,7 +234,7 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Build and install dependencies
+      - name: Build dependencies and package ALVR
         env:
           RUST_BACKTRACE: 1
         run: |
@@ -248,14 +244,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install libfuse2 build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libxrandr-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit libgtk-3-dev libpipewire-0.3-dev libspa-0.2-dev
           cp alvr/xtask/deb/cuda.pc /usr/share/pkgconfig
-
-      - name: Build and package ALVR
-        env:
-          RUST_BACKTRACE: 1
-        run: |
           cargo xtask bump --nightly
           cargo xtask build-streamer --gpl --ci
           tar -czvf ./build/alvr_streamer_linux.tar.gz -C ./build alvr_streamer_linux
+
       - name: Upload linux streamer
         uses: actions/upload-release-asset@v1
         env:
@@ -279,17 +271,12 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Install dependencies
+      - name: Install dependencies and package ALVR
         env:
           RUST_BACKTRACE: 1
         run: |
           sudo apt-get update
           sudo apt-get install build-essential libgtk-3-dev
-
-      - name: Build and package ALVR
-        env:
-          RUST_BACKTRACE: 1
-        run: |
           cargo xtask bump --nightly
           cargo xtask package-launcher --ci
 
