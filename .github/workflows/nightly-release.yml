@@ -77,9 +77,8 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: |
-          cargo xtask prepare-deps --platform windows --gpl --ci
           cargo xtask bump --nightly
-          cargo xtask package-streamer --gpl
+          cargo xtask package-streamer --gpl --ci
           $file = Get-ChildItem -Name .\build\*.exe | Select-Object -f 1
           echo "::set-output name=exe_filename::$file"
 
@@ -135,9 +134,8 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: |
-          cargo xtask prepare-deps --platform windows --gpl --ci
           cargo xtask bump --nightly
-          cargo xtask build-streamer --gpl
+          cargo xtask build-streamer --gpl --ci
           cd build
           zip -r9X alvr_streamer_windows .
 
@@ -175,7 +173,7 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump --nightly
-          cargo xtask package-launcher
+          cargo xtask package-launcher --ci
 
       - name: Upload portable launcher (zip)
         uses: actions/upload-release-asset@v1
@@ -210,14 +208,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install libfuse2 build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libxrandr-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit libgtk-3-dev libpipewire-0.3-dev libspa-0.2-dev
           cp alvr/xtask/deb/cuda.pc /usr/share/pkgconfig
-          cargo xtask prepare-deps --platform linux
 
       - name: Build and package ALVR
         env:
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump --nightly
-          cargo xtask package-streamer --gpl
+          cargo xtask package-streamer --gpl --ci
       - name: Upload linux streamer
         uses: actions/upload-release-asset@v1
         env:
@@ -251,14 +248,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install libfuse2 build-essential pkg-config nasm libva-dev libdrm-dev libvulkan-dev libx264-dev libx265-dev cmake libasound2-dev libjack-jackd2-dev libxrandr-dev libunwind-dev libffmpeg-nvenc-dev nvidia-cuda-toolkit libgtk-3-dev libpipewire-0.3-dev libspa-0.2-dev
           cp alvr/xtask/deb/cuda.pc /usr/share/pkgconfig
-          cargo xtask prepare-deps --platform linux
 
       - name: Build and package ALVR
         env:
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump --nightly
-          cargo xtask build-streamer --gpl
+          cargo xtask build-streamer --gpl --ci
           tar -czvf ./build/alvr_streamer_linux.tar.gz -C ./build alvr_streamer_linux
       - name: Upload linux streamer
         uses: actions/upload-release-asset@v1
@@ -295,7 +291,7 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump --nightly
-          cargo xtask package-launcher
+          cargo xtask package-launcher --ci
 
       - name: Upload linux launcher
         uses: actions/upload-release-asset@v1
@@ -370,9 +366,8 @@ jobs:
           RUST_BACKTRACE: 1
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
-          cargo xtask prepare-deps --platform android --ci
           cargo xtask bump --nightly
-          cargo xtask package-client
+          cargo xtask package-client --ci
           cargo xtask package-client-lib
 
       - name: Sign apk
