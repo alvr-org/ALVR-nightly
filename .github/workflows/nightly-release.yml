@@ -16,7 +16,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       release_id: ${{ steps.create_release.outputs.id }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
       - uses: actions-rs/toolchain@v1
@@ -59,10 +59,11 @@ jobs:
       # This is specific to the GitHub windows-2019 runner.
       LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -117,10 +118,11 @@ jobs:
     env:
       LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -155,7 +157,7 @@ jobs:
     env:
       LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
@@ -189,10 +191,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -225,10 +228,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -263,7 +267,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
@@ -295,7 +299,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
@@ -328,10 +332,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
