@@ -188,7 +188,7 @@ jobs:
           asset_content_type: application/zip
 
   build_linux_streamer:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [prepare_release]
     steps:
       - uses: actions/checkout@v4
@@ -225,7 +225,7 @@ jobs:
           asset_content_type: application/gzip
 
   build_linux_streamer_debug:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [prepare_release]
     steps:
       - uses: actions/checkout@v4
@@ -264,7 +264,7 @@ jobs:
           asset_content_type: application/gzip
 
   build_linux_launcher:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [prepare_release]
     steps:
       - uses: actions/checkout@v4
