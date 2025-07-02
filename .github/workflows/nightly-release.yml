@@ -10,7 +10,7 @@ on:
 
 jobs:
   prepare_release:
-    runs-on: windows-2019
+    runs-on: windows-2022
     outputs:
       release_ref: ${{ steps.gen_tag.outputs.release_ref }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -52,7 +52,7 @@ jobs:
   build_windows_streamer:
     # Windows latest has Rust, Android NDK and LLVM already installed.
     # https://github.com/actions/virtual-environments/blob/main/images/win/Windows2019-Readme.md
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: [prepare_release]
     env:
       # For bindgen to find libclang.dll, we need to give it the path to the Visual Studio package.
@@ -113,7 +113,7 @@ jobs:
           asset_content_type: application/zip
 
   build_windows_streamer_debug:
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: [prepare_release]
     env:
       LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
@@ -152,7 +152,7 @@ jobs:
           asset_content_type: application/zip
 
   build_windows_launcher:
-    runs-on: windows-2019
+    runs-on: windows-2022
     needs: [prepare_release]
     env:
       LIBCLANG_PATH: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\Llvm\x64\bin'
