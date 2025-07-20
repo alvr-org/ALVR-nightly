@@ -130,8 +130,9 @@ jobs:
         env:
           RUST_BACKTRACE: 1
         run: |
+          cargo xtask prepare-deps --platform windows --gpl --ci
           cargo xtask bump --nightly
-          cargo xtask build-streamer --gpl --ci
+          cargo xtask build-streamer --gpl
           cd build
           zip -r9X alvr_streamer_windows .
 
