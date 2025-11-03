@@ -154,6 +154,7 @@ jobs:
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -264,6 +265,7 @@ jobs:
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
+          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -296,6 +298,7 @@ jobs:
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
+          submodules: true
 
       - name: Build and install dependencies
         env:
