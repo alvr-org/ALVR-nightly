@@ -169,6 +169,12 @@ jobs:
           RUST_BACKTRACE: 1
         run: |
           cargo xtask bump --nightly
+          # Create libvpl license directory if it doesn't exist
+          if (!(Test-Path "deps/windows/libvpl/alvr_build/share/vpl/licensing")) {
+            New-Item -ItemType Directory -Path "deps/windows/libvpl/alvr_build/share/vpl/licensing" -Force
+            # Download LICENSE from GitHub
+            Invoke-WebRequest -Uri "https://raw.githubusercontent.com/intel/libvpl/main/LICENSE" -OutFile "deps/windows/libvpl/alvr_build/share/vpl/licensing/license.txt"
+          }
           cargo xtask package-launcher --ci
 
       - name: Upload portable launcher (zip)
