@@ -13,16 +13,12 @@ jobs:
     runs-on: windows-2022
     outputs:
       release_ref: ${{ steps.gen_tag.outputs.release_ref }}
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      release_id: ${{ steps.create_release.outputs.id }}
+      version_tag: ${{ steps.gen_tag.outputs.version_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: main
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
 
       - name: Generate tag, set release ref
         id: gen_tag
@@ -31,24 +27,8 @@ jobs:
         run: |
           $out = cargo xtask bump --nightly
           echo $out
-          echo "::set-output name=version_tag::$(echo $out | sls -CaseSensitive -Pattern '^v.*$')"
-          echo "::set-output name=release_ref::$(git rev-parse HEAD)"
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # Release tag is taken from the gen_tag job.
-          tag_name: ${{ steps.gen_tag.outputs.version_tag }}
-          release_name: ALVR ${{ steps.gen_tag.outputs.version_tag }}
-          # TODO: gather commit messages to post here in the body
-          body: |
-            Nightly release of ALVR: ${{ steps.gen_tag.outputs.version_tag }}
-            Generated from commit: alvr-org/ALVR@${{ steps.gen_tag.outputs.release_ref }}
-          draft: true
-          prerelease: false
+          echo "version_tag=$(echo $out | sls -CaseSensitive -Pattern '^v.*$')" >> $env:GITHUB_OUTPUT
+          echo "release_ref=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
 
   build_windows_streamer:
     # Windows latest has Rust, Android NDK and LLVM already installed.
@@ -56,17 +36,13 @@ jobs:
     runs-on: windows-2022
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
           submodules: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
 
-      - uses: crazy-max/ghaction-chocolatey@v1
+      - uses: crazy-max/ghaction-chocolatey@v4
         with:
           args: install zip unzip pkgconfiglite
 
@@ -100,30 +76,22 @@ jobs:
       #     asset_name: alvr_streamer_windows.msi
       #     asset_content_type: application/octet-stream
       - name: Upload portable streamer (zip)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_streamer_windows.zip
-          asset_name: alvr_streamer_windows.zip
-          asset_content_type: application/zip
+          name: windows-streamer
+          path: ./build/alvr_streamer_windows.zip
 
   build_windows_streamer_debug:
     runs-on: windows-2022
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
           submodules: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
 
-      - uses: crazy-max/ghaction-chocolatey@v1
+      - uses: crazy-max/ghaction-chocolatey@v4
         with:
           args: install zip unzip pkgconfiglite
 
@@ -135,33 +103,25 @@ jobs:
           cargo xtask bump --nightly
           cargo xtask build-streamer --gpl
           cd build
-          zip -r9X alvr_streamer_windows .
+          zip -r9X alvr_streamer_windows_debug .
 
       - name: Upload portable streamer (zip)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_streamer_windows.zip
-          asset_name: alvr_streamer_windows_debug.zip
-          asset_content_type: application/zip
+          name: windows-streamer-debug
+          path: ./build/alvr_streamer_windows_debug.zip
 
   build_windows_launcher:
     runs-on: windows-2022
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
           submodules: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
 
-      - uses: crazy-max/ghaction-chocolatey@v1
+      - uses: crazy-max/ghaction-chocolatey@v4
         with:
           args: install zip
 
@@ -173,28 +133,20 @@ jobs:
           cargo xtask package-launcher --ci
 
       - name: Upload portable launcher (zip)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_launcher_windows.zip
-          asset_name: alvr_launcher_windows.zip
-          asset_content_type: application/zip
+          name: windows-launcher
+          path: ./build/alvr_launcher_windows.zip
 
   build_linux_streamer:
     runs-on: ubuntu-22.04
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
           submodules: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
 
       - name: Build dependencies and package ALVR
         env:
@@ -209,28 +161,20 @@ jobs:
           cargo xtask package-streamer --gpl --ci
 
       - name: Upload linux streamer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_streamer_linux.tar.gz
-          asset_name: alvr_streamer_linux.tar.gz
-          asset_content_type: application/gzip
+          name: linux-streamer
+          path: ./build/alvr_streamer_linux.tar.gz
 
   build_linux_streamer_debug:
     runs-on: ubuntu-22.04
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
           submodules: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
 
       - name: Build dependencies and package ALVR
         env:
@@ -244,31 +188,23 @@ jobs:
           cargo xtask prepare-deps --platform linux --gpl
           cargo xtask bump --nightly
           cargo xtask build-streamer --gpl
-          tar -czvf ./build/alvr_streamer_linux.tar.gz -C ./build alvr_streamer_linux
+          tar -czvf ./build/alvr_streamer_linux_debug.tar.gz -C ./build alvr_streamer_linux
 
       - name: Upload linux streamer
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_streamer_linux.tar.gz
-          asset_name: alvr_streamer_linux_debug.tar.gz
-          asset_content_type: application/gzip
+          name: linux-streamer-debug
+          path: ./build/alvr_streamer_linux_debug.tar.gz
 
   build_linux_launcher:
     runs-on: ubuntu-22.04
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
           submodules: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
 
       - name: Install dependencies and package ALVR
         env:
@@ -280,20 +216,16 @@ jobs:
           cargo xtask package-launcher --ci
 
       - name: Upload linux launcher
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_launcher_linux.tar.gz
-          asset_name: alvr_launcher_linux.tar.gz
-          asset_content_type: application/gzip
+          name: linux-launcher
+          path: ./build/alvr_launcher_linux.tar.gz
 
   build_flatpak_bundle:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
@@ -314,34 +246,26 @@ jobs:
           sudo flatpak-builder --repo=.flatpak-repo --install-deps-from=flathub --force-clean --default-branch=stable --arch=x86_64 .flatpak-build-dir alvr/xtask/flatpak/com.valvesoftware.Steam.Utility.alvr.json
           flatpak build-bundle .flatpak-repo com.valvesoftware.Steam.Utility.alvr.flatpak com.valvesoftware.Steam.Utility.alvr stable --runtime
       - name: Upload flatpak streamer for Linux
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: com.valvesoftware.Steam.Utility.alvr.flatpak
-          asset_name: com.valvesoftware.Steam.Utility.alvr.flatpak
-          asset_content_type: application/octet-stream
+          name: flatpak-bundle
+          path: com.valvesoftware.Steam.Utility.alvr.flatpak
 
   build_android_client:
     runs-on: ubuntu-latest
     needs: [prepare_release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: "alvr-org/ALVR"
           ref: ${{ needs.prepare_release.outputs.release_ref }}
           submodules: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: aarch64-linux-android
-          override: true
-      - uses: actions/setup-java@v2
+
+      - uses: actions/setup-java@v6
         with:
           distribution: "temurin"
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with:
           packages: "platforms;android-32"
       - uses: nttld/setup-ndk@v1
@@ -359,7 +283,7 @@ jobs:
           cargo xtask package-client-lib
 
       - name: Sign apk
-        uses: ilharp/sign-android-release@v1
+        uses: ilharp/sign-android-release@v2
         id: sign_apk
         with:
           releaseDir: build/alvr_client_android
@@ -369,24 +293,15 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           buildToolsVersion: 34.0.0
 
-      - name: Upload apk
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: cp "${{ steps.sign_apk.outputs.signedFile }}" ./build/alvr_client_android.apk
+
+      - name: Upload apk and client library
+        uses: actions/upload-artifact@v7
         with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ${{ steps.sign_apk.outputs.signedFile }}
-          asset_name: alvr_client_android.apk
-          asset_content_type: application/vnd.android.package-archive
-      - name: Upload client library
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.prepare_release.outputs.upload_url }}
-          asset_path: ./build/alvr_client_core.zip
-          asset_name: alvr_client_core.zip
-          asset_content_type: application/zip
+          name: android-client
+          path: |
+            ./build/alvr_client_android.apk
+            ./build/alvr_client_core.zip
 
   publish_release:
     runs-on: ubuntu-latest
@@ -403,8 +318,22 @@ jobs:
         build_android_client,
       ]
     steps:
-      - uses: eregon/publish-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
         with:
-          release_id: ${{ needs.prepare_release.outputs.release_id }}
+          merge-multiple: true
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          # Release tag is taken from the gen_tag job.
+          tag_name: ${{ needs.prepare_release.outputs.version_tag }}
+          name: ALVR ${{ needs.prepare_release.outputs.version_tag }}
+          # TODO: gather commit messages to post here in the body
+          body: |
+            Nightly release of ALVR: ${{ needs.prepare_release.outputs.version_tag }}
+            Generated from commit: alvr-org/ALVR@${{ needs.prepare_release.outputs.release_ref }}
+          draft: false
+          prerelease: false
+          files: artifacts/*
