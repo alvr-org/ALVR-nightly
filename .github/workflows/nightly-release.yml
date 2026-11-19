@@ -238,12 +238,12 @@ jobs:
           sudo add-apt-repository universe
           sudo apt-get update
           sudo apt-get install flatpak flatpak-builder
-          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
       - name: Build and package ALVR flatpak (.flatpak)
         id: build_flatpak
         run: |
-          sudo flatpak-builder --repo=.flatpak-repo --install-deps-from=flathub --force-clean --disable-rofiles-fuse --default-branch=stable --arch=x86_64 .flatpak-build-dir alvr/xtask/flatpak/com.valvesoftware.Steam.Utility.alvr.json
+          flatpak-builder --user --repo=.flatpak-repo --install-deps-from=flathub --force-clean --default-branch=stable --arch=x86_64 .flatpak-build-dir alvr/xtask/flatpak/com.valvesoftware.Steam.Utility.alvr.json
           flatpak build-bundle .flatpak-repo com.valvesoftware.Steam.Utility.alvr.flatpak com.valvesoftware.Steam.Utility.alvr stable --runtime
       - name: Upload flatpak streamer for Linux
         uses: actions/upload-artifact@v7
